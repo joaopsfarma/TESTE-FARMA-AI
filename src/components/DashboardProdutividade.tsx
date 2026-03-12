@@ -58,7 +58,6 @@ export default function DashboardProdutividade() {
       Papa.parse(text, {
         header: true,
         skipEmptyLines: true,
-        transformHeader: (header) => header.trim(),
         complete: (results) => {
           const parsedData: ProdutividadeRecord[] = results.data.map((row: any) => ({
             ...row,
@@ -83,29 +82,26 @@ export default function DashboardProdutividade() {
     setIsDragging(false);
   };
 
-  // Helper to calculate difference in days (ignoring time since it's zeroed out)
-  const getDaysDifference = (pedidoData: string, atendimentoDataHora: string) => {
-    if (!pedidoData || !atendimentoDataHora) return null;
+  // Helper to calculate time difference in minutes
+  const getMinutesDifference = (pedidoData: string, pedidoHora: string, atendimentoDataHora: string) => {
+    if (!pedidoData || !pedidoHora || !atendimentoDataHora) return null;
 
-    // Parse DTPEDIDO (DD/MM/YYYY HH:mm:ss or DD/MM/YYYY)
-    const pedidoParts = pedidoData.split(' ')[0].split('/');
-    const pDay = pedidoParts[0];
-    const pMonth = pedidoParts[1];
-    const pYear = pedidoParts[2];
-    if (!pDay || !pMonth || !pYear) return null;
+    // Parse DTPEDIDO (DD/MM/YYYY) and HRPEDIDO (HH:mm:ss or HH:mm)
+    const [day, month, year] = pedidoData.split(' ')[0].split('/');
+    if (!day || !month || !year) return null;
+
+    const requestDate = new Date(`${year}-${month}-${day}T${pedidoHora}`);
 
     // Parse DT_SOLSAI_PRO (DD/MM/YYYY HH:mm:ss)
     const [atDay, atMonth, atYearTime] = atendimentoDataHora.split('/');
     if (!atDay || !atMonth || !atYearTime) return null;
-    const atYear = atYearTime.split(' ')[0];
+    const [atYear, atTime] = atYearTime.split(' ');
+    const attendDate = new Date(`${atYear}-${atMonth}-${atDay}T${atTime || '00:00:00'}`);
 
-    const reqDate = new Date(`${pYear}-${pMonth}-${pDay}T00:00:00`);
-    const attDate = new Date(`${atYear}-${atMonth}-${atDay}T00:00:00`);
+    if (isNaN(requestDate.getTime()) || isNaN(attendDate.getTime())) return null;
 
-    if (isNaN(reqDate.getTime()) || isNaN(attDate.getTime())) return null;
-
-    const diffMs = attDate.getTime() - reqDate.getTime();
-    return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24))); // returns in days
+    const diffMs = attendDate.getTime() - requestDate.getTime();
+    return Math.max(0, Math.floor(diffMs / 60000)); // returns in minutes
   };
 
   // Aggregate Data
@@ -138,19 +134,18 @@ export default function DashboardProdutividade() {
       totalPedidos.add(numPedido);
       totalItems += row.QT_MOVIMENTACAO;
 
-      // Extract hour for peak demand from HRPEDIDO (e.g. 11/03/2026 16:56:48 or 16:56:48)
+      // Extract hour for peak demand
       if (row.HRPEDIDO) {
-        const timePart = row.HRPEDIDO.includes(' ') ? row.HRPEDIDO.split(' ')[1] : row.HRPEDIDO;
-        const hr = timePart ? timePart.split(':')[0] : null;
+        const hr = row.HRPEDIDO.split(':')[0];
         if (hr) {
           byHour[hr] = (byHour[hr] || 0) + 1;
         }
       }
 
-      // Calculate response time in days
-      const timeDiffDays = getDaysDifference(row.DTPEDIDO, row.DT_SOLSAI_PRO);
-      if (timeDiffDays !== null && timeDiffDays < 30) { // ignore absurd outliers > 30 days
-        byUser[userName].temposAtendimento.push(timeDiffDays);
+      // Calculate response time
+      const timeDiff = getMinutesDifference(row.DTPEDIDO, row.HRPEDIDO, row.DT_SOLSAI_PRO);
+      if (timeDiff !== null && timeDiff < 1440) { // filter out absurd outliers (>24h)
+        byUser[userName].temposAtendimento.push(timeDiff);
       }
     });
 
@@ -271,7 +266,7 @@ export default function DashboardProdutividade() {
                 <div className="p-2 bg-purple-50 text-purple-600 rounded-lg"><Clock className="w-5 h-5" /></div>
                 <p className="text-sm font-semibold text-slate-600">Tempo Médio (Geral)</p>
               </div>
-              <p className="text-3xl font-black text-slate-900">{stats.globalAvgTime} dias</p>
+              <p className="text-3xl font-black text-slate-900">{stats.globalAvgTime} min</p>
             </div>
 
             <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-2xl border border-orange-400 shadow-sm text-white relative overflow-hidden">
@@ -336,7 +331,7 @@ export default function DashboardProdutividade() {
                     <th className="p-4">Profissional</th>
                     <th className="p-4 text-center">Ped. Atendidos</th>
                     <th className="p-4 text-center">Itens Mov.</th>
-                    <th className="p-4 text-center">Tempo Médio (Dias)</th>
+                    <th className="p-4 text-center">Tempo Médio (min)</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm text-slate-700">
@@ -351,9 +346,9 @@ export default function DashboardProdutividade() {
                       <td className="p-4 text-center">{user.itemsMovimentados}</td>
                       <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-1.5">
-                          <Clock className={`w-4 h-4 \${user.mediaTempoMinutos > 60 ? 'text-red-500' : 'text-emerald-500'}`} />
-                          <span className={user.mediaTempoMinutos > 60 ? 'text-red-600 font-medium' : ''}>
-                            {user.mediaTempoMinutos}
+                          <Clock className={`w-4 h-4 \${user.mediaTempoDias > 1 ? 'text-red-500' : 'text-emerald-500'}`} />
+                          <span className={user.mediaTempoDias > 1 ? 'text-red-600 font-medium' : ''}>
+                            {user.mediaTempoDias}
                           </span>
                         </div>
                       </td>
