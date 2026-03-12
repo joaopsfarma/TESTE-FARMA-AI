@@ -46,17 +46,30 @@ export const DailyTracking: React.FC = () => {
           const rows = results.data as string[][];
           
           let headerIdx = -1;
-          for (let i=0; i < Math.min(rows.length, 10); i++) {
-            const rowStr = rows[i].join('').toLowerCase();
-            if (rowStr.includes('produto') && rowStr.includes('unidade') && rowStr.includes('saldo')) {
+          let colIndices = { total: 8, avg: 9, stock: 10, proj: 12, daysStart: 3 };
+
+          for (let i = 0; i < Math.min(rows.length, 10); i++) {
+            const hRow = rows[i];
+            const hRowLower = hRow.map(c => c?.toLowerCase().trim() || '');
+
+            if (hRowLower.some(c => c.includes('produto')) && hRowLower.some(c => c.includes('saldo'))) {
               headerIdx = i;
+
+              // Encontrar índices dinamicamente
+              colIndices.total = hRowLower.findIndex(c => c.includes('total')) !== -1 ? hRowLower.findIndex(c => c.includes('total')) : 8;
+              colIndices.avg = hRowLower.findIndex(c => c.includes('média') || c.includes('media')) !== -1 ? hRowLower.findIndex(c => c.includes('média') || c.includes('media')) : 9;
+              colIndices.stock = hRowLower.findIndex(c => c.includes('saldo')) !== -1 ? hRowLower.findIndex(c => c.includes('saldo')) : 10;
+              colIndices.proj = hRowLower.findIndex(c => c.includes('projeç') || c.includes('projec')) !== -1 ? hRowLower.findIndex(c => c.includes('projeç') || c.includes('projec')) : 12;
+
+              // Procurar a primeira coluna de dia (primeiro número após 'unidade')
+              const unitIdx = hRowLower.findIndex(c => c.includes('unidade'));
+              colIndices.daysStart = unitIdx !== -1 ? unitIdx + 1 : 3;
               
-              const hRow = rows[i];
-              const d1 = hRow[3]?.replace(/"/g, '') || 'D1';
-              const d2 = hRow[4]?.replace(/"/g, '') || 'D2';
-              const d3 = hRow[5]?.replace(/"/g, '') || 'D3';
-              const d4 = hRow[6]?.replace(/"/g, '') || 'D4';
-              const d5 = hRow[7]?.replace(/"/g, '') || 'D5';
+              const d1 = hRow[colIndices.daysStart]?.replace(/"/g, '') || 'D1';
+              const d2 = hRow[colIndices.daysStart + 1]?.replace(/"/g, '') || 'D2';
+              const d3 = hRow[colIndices.daysStart + 2]?.replace(/"/g, '') || 'D3';
+              const d4 = hRow[colIndices.daysStart + 3]?.replace(/"/g, '') || 'D4';
+              const d5 = hRow[colIndices.daysStart + 4]?.replace(/"/g, '') || 'D5';
               setDaysHeader([d1, d2, d3, d4, d5]);
               
               break;
@@ -68,7 +81,7 @@ export const DailyTracking: React.FC = () => {
 
           for (let i = startIndex; i < rows.length; i++) {
             const row = rows[i];
-            if (row.length < 10) continue;
+            if (row.length < 5) continue; // Mínimo de colunas necessárias
 
             const prodCol = row[0] || '';
             const match = prodCol.match(/^"?(\d+)\s*,\s*(.+)("?)$/);
@@ -86,19 +99,25 @@ export const DailyTracking: React.FC = () => {
                continue;
             }
 
-            const unit = row[2] || '';
-            const h1 = parseNumber(row[3]);
-            const h2 = parseNumber(row[4]);
-            const h3 = parseNumber(row[5]);
-            const h4 = parseNumber(row[6]);
-            const h5 = parseNumber(row[7]);
+            // Descobrir unidade iterando se o CSV tiver colunas vazias
+            const unitIdx = row.findIndex((c, idx) => idx > 0 && idx < colIndices.daysStart && isNaN(Number(c)) && c.trim() !== '') !== -1
+              ? row.findIndex((c, idx) => idx > 0 && idx < colIndices.daysStart && isNaN(Number(c)) && c.trim() !== '')
+              : 2;
+
+            const unit = row[unitIdx] || '';
+
+            const h1 = parseNumber(row[colIndices.daysStart]);
+            const h2 = parseNumber(row[colIndices.daysStart + 1]);
+            const h3 = parseNumber(row[colIndices.daysStart + 2]);
+            const h4 = parseNumber(row[colIndices.daysStart + 3]);
+            const h5 = parseNumber(row[colIndices.daysStart + 4]);
             
-            const total = parseNumber(row[8]);
-            const avg = parseNumber(row[9]);
-            const stock = parseNumber(row[10]);
+            const total = parseNumber(row[colIndices.total]);
+            const avg = parseNumber(row[colIndices.avg]);
+            const stock = parseNumber(row[colIndices.stock]);
             
             // Projeção: if it has enough columns, use it, else calculate it
-            const projection = row.length > 12 ? parseNumber(row[12]) : (avg > 0 ? stock / avg : 999);
+            const projection = row[colIndices.proj] ? parseNumber(row[colIndices.proj]) : (avg > 0 ? stock / avg : 999);
 
             if (id && name) {
               parsedData.push({
