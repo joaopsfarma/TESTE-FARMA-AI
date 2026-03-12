@@ -1,3 +1,4 @@
+import DashboardProdutividade from "./components/DashboardProdutividade";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -119,6 +120,7 @@ function App() {
     { id: 'followup', label: 'Follow Up', icon: <ListTodo className="w-5 h-5" />, classes: { activeBg: 'bg-blue-50', activeText: 'text-blue-700', activeBorder: 'border-blue-100', iconActive: 'text-blue-600', badgeBg: 'bg-blue-200', badgeText: 'text-blue-800' } },
     { id: 'genesis', label: 'Projeto Genesis', icon: <FileSpreadsheet className="w-5 h-5" />, classes: { activeBg: 'bg-cyan-50', activeText: 'text-cyan-700', activeBorder: 'border-cyan-100', iconActive: 'text-cyan-600', badgeBg: 'bg-cyan-200', badgeText: 'text-cyan-800' } },
     { id: 'previsibilidade', label: 'Previsibilidade', icon: <AlertCircle className="w-5 h-5" />, classes: { activeBg: 'bg-rose-50', activeText: 'text-rose-700', activeBorder: 'border-rose-100', iconActive: 'text-rose-600', badgeBg: 'bg-rose-200', badgeText: 'text-rose-800' } },
+    { id: 'produtividade', label: 'Produtividade', icon: <Activity className="w-5 h-5" />, classes: { activeBg: 'bg-orange-50', activeText: 'text-orange-700', activeBorder: 'border-orange-100', iconActive: 'text-orange-600', badgeBg: 'bg-orange-200', badgeText: 'text-orange-800' } },
     { id: 'equivalencia', label: 'Equivalência', icon: <Database className="w-5 h-5" />, classes: { activeBg: 'bg-teal-50', activeText: 'text-teal-700', activeBorder: 'border-teal-100', iconActive: 'text-teal-600', badgeBg: 'bg-teal-200', badgeText: 'text-teal-800' } },
     { id: 'rastreio', label: 'Rastreio Cancelamento', icon: <Ban className="w-5 h-5" />, classes: { activeBg: 'bg-red-50', activeText: 'text-red-700', activeBorder: 'border-red-100', iconActive: 'text-red-600', badgeBg: 'bg-red-200', badgeText: 'text-red-800' } },
     { id: 'import', label: 'Importar CSV', icon: <Database className="w-5 h-5" />, classes: { activeBg: 'bg-blue-50', activeText: 'text-blue-700', activeBorder: 'border-blue-100', iconActive: 'text-blue-600', badgeBg: 'bg-blue-200', badgeText: 'text-blue-800' } },
@@ -367,6 +369,12 @@ function App() {
         {activeTab === 'rastreio' && (
           <div className="w-full">
             <DashboardRastreio />
+          </div>
+        )}
+
+        {activeTab === 'produtividade' && (
+          <div className="max-w-6xl mx-auto">
+            <DashboardProdutividade />
           </div>
         )}
 

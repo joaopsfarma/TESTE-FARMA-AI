@@ -2,7 +2,7 @@ import React from 'react';
 import { Menu, X, LayoutDashboard, FileSpreadsheet, Code, Pill, Database, AlertCircle, PieChart, ListTodo, Activity, ClipboardList, ChevronRight, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-export type TabId = 'dashboard' | 'analytics' | 'transfer' | 'vba' | 'import' | 'followup' | 'dispensary' | 'genesis' | 'previsibilidade' | 'equivalencia' | 'dispensaryProject' | 'pedido24h' | 'rastreio';
+export type TabId = 'dashboard' | 'analytics' | 'transfer' | 'vba' | 'import' | 'followup' | 'dispensary' | 'genesis' | 'previsibilidade' | 'equivalencia' | 'dispensaryProject' | 'pedido24h' | 'rastreio' | 'produtividade';
 
 // Define the nav item structure with classes specific to Sidebar
 export interface NavItem {
