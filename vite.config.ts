@@ -6,9 +6,9 @@ import {defineConfig, loadEnv} from 'vite';
 export default defineConfig(({command, mode}) => {
   const env = loadEnv(mode, '.', '');
   return {
-    // Usa /PAINEL-LOGISTICA/ apenas no build do GitHub Actions (produção).
+    // Usa /TESTE-FARMA-AI/ apenas no build do GitHub Actions (produção).
     // No modo dev (Google AI Studio), usa a raiz '/' para não quebrar o preview.
-    base: command === 'build' ? '/PAINEL-LOGISTICA/' : '/', 
+    base: command === 'build' ? '/TESTE-FARMA-AI/' : '/',
     plugins: [react(), tailwindcss()],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
@@ -20,7 +20,7 @@ export default defineConfig(({command, mode}) => {
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };
